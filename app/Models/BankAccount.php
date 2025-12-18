@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+/**
+ * Class BankAccount
+ *
+ * @property int $id
+ * @property int $bank_id
+ * @property string $account_number
+ * @property string $currency
+ * @property decimal $initial_balance
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ *
+ * @property-read \App\Models\Bank $bank
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AccountBalance> $balances
+ */
+class BankAccount extends Model
+{
+    protected $fillable = [
+        'bank_id',
+        'account_number',
+        'currency',
+        'initial_balance',
+    ];
+
+    protected $casts = [
+        'initial_balance' => 'decimal:2',
+    ];
+
+    /**
+     * Bank this account belongs to.
+     */
+    public function bank(): BelongsTo
+    {
+        return $this->belongsTo(Bank::class);
+    }
+
+    /**
+     * Balance records for this account.
+     */
+    public function balances(): HasMany
+    {
+        return $this->hasMany(AccountBalance::class);
+    }
+}

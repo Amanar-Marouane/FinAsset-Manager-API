@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::create('prets', function (Blueprint $table) {
+            $table->id();
+            // same as credit but without organization
+            $table->decimal('montant', 15, 2);
+            $table->decimal('monthly_payment', 15, 2)->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('prets');
+    }
+};
