@@ -8,15 +8,14 @@ class PaginatorParam
 {
     public static function getNormalizedParams(Request $request): array
     {
-        $defaults = [
-            'start' => 0,
-            'length' => 10,
-            'sortBy' => 'created_at',
-            'sortDir' => 'desc',
-            'draw' => 1
+        return [
+            'start'   => (int) $request->input('start', 0),
+            'length'  => (int) $request->input('length', 10),
+            'sortBy'  => $request->input('sortBy', 'created_at'),
+            'sortDir' => in_array($request->input('sortDir'), ['asc', 'desc'])
+                ? $request->input('sortDir')
+                : 'desc',
+            'draw'    => (int) $request->input('draw', 1),
         ];
-        return collect($defaults)
-            ->map(fn($default, $key) => Normalizer::normalizeRequestPayload($request, $key, $default))
-            ->toArray();
     }
 }

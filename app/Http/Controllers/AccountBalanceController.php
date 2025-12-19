@@ -185,8 +185,15 @@ class AccountBalanceController extends Controller
 
     private function applyFilters(Builder $query, Request $request): Builder
     {
+        // explicitly order by year from newest to oldest, then by month
+        $query->orderBy('year', 'desc')->orderBy('month', 'desc');
+
+        // Apply filters if provided
+        $currentYear = date('Y');
         if ($request->filled('year')) {
             $query->where('year', $request->input('year'));
+        }else{
+            $query->where('year', $currentYear);
         }
 
         if ($request->filled('month')) {

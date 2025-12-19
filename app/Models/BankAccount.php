@@ -24,9 +24,9 @@ class BankAccount extends Model
 {
     protected $fillable = [
         'bank_id',
+        'account_name',
         'account_number',
         'currency',
-        'initial_balance',
     ];
 
     protected $casts = [
@@ -47,5 +47,20 @@ class BankAccount extends Model
     public function balances(): HasMany
     {
         return $this->hasMany(AccountBalance::class);
+    }
+
+    public function getLastInsertedBalanceAttribute()
+    {
+        $lastBalance = $this->balances()->orderBy('date', 'desc')->first();
+        return $lastBalance;
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (BankAccount $account) {
+            if ($account->balances()->exists()) {
+                throw new \RuntimeException('Cannot delete bank account with existing balances.');
+            }
+        });
     }
 }

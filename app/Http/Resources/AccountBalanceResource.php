@@ -19,7 +19,7 @@ class AccountBalanceResource extends JsonResource
             'account_id' => $this->bank_account_id,
             'year' => $this->year,
             'month' => $this->month,
-            'date' => $this->date->format('Y-m-d'),
+            'date' => $this->date->format('Y-m'),
             'amount' => $this->amount,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

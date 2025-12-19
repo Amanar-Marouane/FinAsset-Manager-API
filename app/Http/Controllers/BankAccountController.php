@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Unk\LaravelApiResponse\Traits\{HttpResponse, HttpResponseWithDataTables};
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 class BankAccountController extends Controller
 {
@@ -64,14 +65,16 @@ class BankAccountController extends Controller
     {
         $validated = $request->validate([
             'bank_id' => 'required|exists:banks,id',
-            'account_number' => 'required|string|max:255',
+            'account_number' => 'nullable|string|max:255',
             'currency' => 'sometimes|string|max:3',
-            'initial_balance' => 'sometimes|numeric|min:0',
+            'account_name' => 'required|string|max:255',
         ]);
 
         // Set defaults for optional fields
         $validated['currency'] = $validated['currency'] ?? 'MAD';
-        $validated['initial_balance'] = $validated['initial_balance'] ?? 0;
+        if (!isset($validated['account_number'])) {
+            $validated['account_number'] = '';
+        }
 
         $account = BankAccount::create($validated);
 
@@ -107,8 +110,8 @@ class BankAccountController extends Controller
         $validated = $request->validate([
             'bank_id' => 'sometimes|required|exists:banks,id',
             'account_number' => 'sometimes|required|string|max:255',
+            'account_name' => 'sometimes|required|string|max:255',
             'currency' => 'sometimes|string|max:3',
-            'initial_balance' => 'sometimes|numeric|min:0',
         ]);
 
         $account->update($validated);
@@ -127,6 +130,10 @@ class BankAccountController extends Controller
             return $this->notFound('Compte bancaire introuvable.');
         }
 
+        if ($account->balances()->exists()) {
+            return $this->error('Impossible de supprimer un compte bancaire ayant des mouvements.', 422);
+        }
+
         $account->delete();
 
         return $this->success(null, 'Compte bancaire supprimé avec succès.');
@@ -134,11 +141,10 @@ class BankAccountController extends Controller
 
     private function applyFilters(Builder $query, Request $request): Builder
     {
-        $filters = ['id', 'account_number', 'bank_id', 'currency'];
+        $filters = ['id', 'account_number', 'bank_id', 'currency', 'account_name'];
 
         foreach ($filters as $filter) {
             $value = $request->input($filter);
-
             if ($request->filled($filter)) {
                 if (in_array($filter, ['id', 'bank_id'])) {
                     $query->where($filter, $value);

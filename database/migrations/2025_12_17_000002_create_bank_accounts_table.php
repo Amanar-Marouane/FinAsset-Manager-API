@@ -13,9 +13,9 @@ return new class extends Migration {
                 ->constrained('banks')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
-            $table->string('account_number');
-            $table->string('currency')->default('USD');
-            $table->decimal('initial_balance', 15, 2)->default(0);
+            $table->string('account_name')->default('');
+            $table->string('account_number')->default('');
+            $table->string('currency')->default('MAD');
             $table->timestamps();
         });
     }
