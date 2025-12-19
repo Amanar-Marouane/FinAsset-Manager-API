@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('building-types')->group(function () {
     Route::get('/', [BuildingTypeController::class, 'index']);
+    Route::get('/all', [BuildingTypeController::class, 'all']);
     Route::get('/create', [BuildingTypeController::class, 'create']);
     Route::post('/store', [BuildingTypeController::class, 'store']);
     Route::get('/edit/{id}', [BuildingTypeController::class, 'edit']);

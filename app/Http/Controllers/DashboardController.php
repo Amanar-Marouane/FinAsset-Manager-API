@@ -47,8 +47,6 @@ class DashboardController extends Controller
 
             'prets_total_montant' => (string) Pret::sum('montant'),
 
-            'bank_accounts_total_initial_balance' => (string) BankAccount::sum('initial_balance'),
-
             'cars_total_value' => (string) Car::sum('price'),
 
             // Current month balances (only one per month per account enforced)

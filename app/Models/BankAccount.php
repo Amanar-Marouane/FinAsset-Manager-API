@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $bank_id
  * @property string $account_number
  * @property string $currency
- * @property decimal $initial_balance
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  *
@@ -27,10 +26,6 @@ class BankAccount extends Model
         'account_name',
         'account_number',
         'currency',
-    ];
-
-    protected $casts = [
-        'initial_balance' => 'decimal:2',
     ];
 
     /**
