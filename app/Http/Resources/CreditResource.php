@@ -17,6 +17,7 @@ class CreditResource extends JsonResource
         return [
             'id' => $this->id,
             'montant' => $this->montant,
+            'montant_net' => $this->montant_net,
             'monthly_payment' => $this->monthly_payment,
             'organization' => $this->organization,
             'created_at' => $this->created_at,

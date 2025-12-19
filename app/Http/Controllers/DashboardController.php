@@ -43,6 +43,7 @@ class DashboardController extends Controller
 
             'credits_total_montant' => (string) Credit::sum('montant'),
             'credits_total_monthly_payment' => (string) Credit::sum('monthly_payment'),
+            'credits_total_montant_net' => (string) Credit::sum('montant_net'),
 
             'prets_total_montant' => (string) Pret::sum('montant'),
 
@@ -55,7 +56,7 @@ class DashboardController extends Controller
             'current_month_balances_count' => AccountBalance::where('year', $now->year)->where('month', $now->month)->count(),
 
             // Loan net position (incoming - outgoing)
-            'net_loans_position' => (string) (Pret::sum('montant') - Credit::sum('montant')),
+            'net_loans_position' => (string) (Pret::sum('montant') - Credit::sum('montant_net')),
         ];
 
         return $this->success([

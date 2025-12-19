@@ -56,6 +56,7 @@ class CreditController extends Controller
     {
         $validated = $request->validate([
             'montant' => 'required|numeric|min:0',
+            'montant_net' => 'nullable|numeric|min:0',
             'monthly_payment' => 'nullable|numeric|min:0',
             'organization' => 'nullable|string|max:255',
         ]);
@@ -93,6 +94,7 @@ class CreditController extends Controller
 
         $validated = $request->validate([
             'montant' => 'sometimes|required|numeric|min:0',
+            'montant_net' => 'nullable|numeric|min:0',
             'monthly_payment' => 'nullable|numeric|min:0',
             'organization' => 'nullable|string|max:255',
         ]);
@@ -120,12 +122,12 @@ class CreditController extends Controller
 
     private function applyFilters(Builder $query, Request $request): Builder
     {
-        $filters = ['id', 'organization'];
+        $filters = ['id', 'organization', 'montant', 'montant_net', 'monthly_payment'];
 
         foreach ($filters as $filter) {
             $value = $request->input($filter);
             if ($request->filled($filter)) {
-                if ($filter === 'id') {
+                if ($filter === 'id' || $filter === 'montant' || $filter === 'montant_net' || $filter === 'monthly_payment') {
                     $query->where($filter, $value);
                 } else {
                     $query->where($filter, 'like', "%{$value}%");
