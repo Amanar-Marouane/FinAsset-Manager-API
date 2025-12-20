@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BankAccountResource extends JsonResource
+class BankAccountYearlySummaryResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -15,6 +15,8 @@ class BankAccountResource extends JsonResource
     public function toArray(Request $request): array
     {
         $lastInsertedBalanceObject = $this->last_inserted_balance;
+        $previousYearLastBalance = $this->previous_year_last_balance;
+
         return [
             'id' => $this->id,
             'bank' => $this->bank ? [
@@ -27,6 +29,8 @@ class BankAccountResource extends JsonResource
             'account_number' => $this->account_number,
             'last_inserted_balance' => $lastInsertedBalanceObject ? $lastInsertedBalanceObject->amount : null,
             'last_inserted_balance_date' => $lastInsertedBalanceObject ? $lastInsertedBalanceObject->date->format('Y-m') : null,
+            'previous_year_last_balance' => $previousYearLastBalance ? $previousYearLastBalance->amount : null,
+            'previous_year_last_balance_date' => $previousYearLastBalance ? $previousYearLastBalance->date->format('Y-m') : null,
             'currency' => $this->currency,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

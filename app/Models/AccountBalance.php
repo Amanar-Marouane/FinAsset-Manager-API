@@ -27,11 +27,13 @@ class AccountBalance extends Model
         'month',
         'date',
         'amount',
+        'other_person_money',
     ];
 
     protected $casts = [
         'date' => 'date',
         'amount' => 'decimal:2',
+        'other_person_money' => 'decimal:2',
         'year' => 'integer',
         'month' => 'integer',
     ];

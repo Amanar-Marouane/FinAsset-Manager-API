@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\PaginatorParam;
-use App\Http\Resources\BankAccountResource;
+use App\Http\Resources\{BankAccountResource, BankAccountYearlySummaryResource};
 use App\Models\Bank;
 use App\Models\BankAccount;
 use Illuminate\Http\JsonResponse;
@@ -50,6 +50,41 @@ class BankAccountController extends Controller
             recordsTotal: $recordsTotal,
             recordsFiltered: $recordsFiltered
         );
+    }
+
+    public function all(): JsonResponse
+    {
+        $accounts = BankAccount::with(['bank', 'balances'])->get();
+
+        return $this->success(
+            BankAccountResource::collection($accounts),
+            'Tous les comptes bancaires récupérés avec succès.'
+        );
+    }
+
+    public function yearlySummary(int $year): JsonResponse
+    {
+        try {
+            $accounts = BankAccount::with(['bank', 'balances' => function ($query) use ($year) {
+                $query->where('year', $year);
+            }])->get();
+
+            // Explicitly fetch last balance from previous year
+            $accounts->each(function ($account) use ($year) {
+                $account->previous_year_last_balance = $account->balances()
+                    ->where('year', $year - 1)
+                    ->orderBy('date', 'desc')
+                    ->first();
+            });
+
+            return $this->success(
+                BankAccountYearlySummaryResource::collection($accounts),
+                "Résumé annuel des comptes bancaires pour l'année {$year} récupéré avec succès."
+            );
+        } catch (\Exception $e) {
+            Log::error("Erreur lors de la récupération du résumé annuel des comptes bancaires pour l'année {$year}: " . $e->getMessage());
+            return $this->error('Une erreur est survenue lors de la récupération des données.', 500);
+        }
     }
 
     public function create(): JsonResponse

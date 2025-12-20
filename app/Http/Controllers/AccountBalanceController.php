@@ -8,7 +8,6 @@ use App\Models\AccountBalance;
 use App\Models\BankAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Unk\LaravelApiResponse\Traits\{HttpResponse, HttpResponseWithDataTables};
 use Illuminate\Database\Eloquent\Builder;
 
@@ -183,17 +182,71 @@ class AccountBalanceController extends Controller
         return $this->success(null, 'Enregistrement de solde supprimé avec succès.');
     }
 
+    public function insertOtherPersonMoney(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+            'bank_account_id' => 'required|exists:bank_accounts,id',
+            'other_person_money' => 'required|numeric|min:0',
+        ]);
+
+        $balance = AccountBalance::where('year', \Carbon\Carbon::parse($validated['date'])->year)
+            ->where('month', \Carbon\Carbon::parse($validated['date'])->month)
+            ->where('bank_account_id', $request->input('bank_account_id'))
+            ->first();
+
+        if (!$balance) {
+            $balance = new AccountBalance([
+                'bank_account_id' => $request->input('bank_account_id'),
+                'date' => $validated['date'],
+                'amount' => 0,
+                'other_person_money' => $validated['other_person_money'],
+            ]);
+        } else {
+            $balance->other_person_money = $validated['other_person_money'];
+        }
+
+        $balance->save();
+
+        return $this->success(
+            new AccountBalanceResource($balance),
+            'Montant des fonds d\'autrui mis à jour avec succès.'
+        );
+    }
+
+    public function getByDateAndAccountId(Request $request, $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'date' => 'required|date',
+        ]);
+
+        $date = \Carbon\Carbon::parse($validated['date']);
+        $year = $date->year;
+        $month = $date->month;
+
+        $balance = AccountBalance::where('bank_account_id', $id)
+            ->where('year', $year)
+            ->where('month', $month)
+            ->first();
+
+        if (!$balance) {
+            return $this->notFound('Enregistrement de solde introuvable pour la date spécifiée.');
+        }
+
+        return $this->success(
+            new AccountBalanceResource($balance),
+            'Enregistrement de solde récupéré avec succès.'
+        );
+    }
+
     private function applyFilters(Builder $query, Request $request): Builder
     {
         // explicitly order by year from newest to oldest, then by month
         $query->orderBy('year', 'desc')->orderBy('month', 'desc');
 
         // Apply filters if provided
-        $currentYear = date('Y');
         if ($request->filled('year')) {
             $query->where('year', $request->input('year'));
-        }else{
-            $query->where('year', $currentYear);
         }
 
         if ($request->filled('month')) {
