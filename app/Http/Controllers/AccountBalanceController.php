@@ -182,38 +182,6 @@ class AccountBalanceController extends Controller
         return $this->success(null, 'Enregistrement de solde supprimé avec succès.');
     }
 
-    public function insertOtherPersonMoney(Request $request): JsonResponse
-    {
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'bank_account_id' => 'required|exists:bank_accounts,id',
-            'other_person_money' => 'required|numeric|min:0',
-        ]);
-
-        $balance = AccountBalance::where('year', \Carbon\Carbon::parse($validated['date'])->year)
-            ->where('month', \Carbon\Carbon::parse($validated['date'])->month)
-            ->where('bank_account_id', $request->input('bank_account_id'))
-            ->first();
-
-        if (!$balance) {
-            $balance = new AccountBalance([
-                'bank_account_id' => $request->input('bank_account_id'),
-                'date' => $validated['date'],
-                'amount' => 0,
-                'other_person_money' => $validated['other_person_money'],
-            ]);
-        } else {
-            $balance->other_person_money = $validated['other_person_money'];
-        }
-
-        $balance->save();
-
-        return $this->success(
-            new AccountBalanceResource($balance),
-            'Montant des fonds d\'autrui mis à jour avec succès.'
-        );
-    }
-
     public function getByDateAndAccountId(Request $request, $id): JsonResponse
     {
         $validated = $request->validate([

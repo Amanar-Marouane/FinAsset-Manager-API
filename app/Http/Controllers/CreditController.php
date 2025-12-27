@@ -8,6 +8,7 @@ use App\Models\Credit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 use Unk\LaravelApiResponse\Traits\{HttpResponse, HttpResponseWithDataTables};
 
 class CreditController extends Controller
@@ -52,13 +53,32 @@ class CreditController extends Controller
         return $this->success(null, 'Prêt à créer un crédit.');
     }
 
+    public function all(Request $request): JsonResponse
+    {
+        $year = $request->input('year', now()->year);
+
+        $credits = Credit::with(['entries' => function ($query) use ($year) {
+            $query->where('year', $year);
+        }])->get();
+
+        // fetch total amount of the entries before that year
+        $credits->each(function ($credit) use ($year) {
+            $credit->entries_total_before_current_year = $credit->entries()
+                ->where('year', '!=', $year)
+                ->sum('amount');
+        });
+
+        return $this->success(
+            CreditResource::collection($credits),
+            'Tous les crédits chargés avec succès.'
+        );
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'to' => 'required|string|max:255',
             'montant' => 'required|numeric|min:0',
-            'montant_net' => 'nullable|numeric|min:0',
-            'monthly_payment' => 'nullable|numeric|min:0',
-            'organization' => 'nullable|string|max:255',
         ]);
 
         $credit = Credit::create($validated);
@@ -93,10 +113,8 @@ class CreditController extends Controller
         }
 
         $validated = $request->validate([
+            'to' => 'sometimes|required|string|max:255',
             'montant' => 'sometimes|required|numeric|min:0',
-            'montant_net' => 'nullable|numeric|min:0',
-            'monthly_payment' => 'nullable|numeric|min:0',
-            'organization' => 'nullable|string|max:255',
         ]);
 
         $credit->update($validated);
@@ -115,6 +133,10 @@ class CreditController extends Controller
             return $this->notFound('Crédit introuvable.');
         }
 
+        if ($credit->entries()->exists()) {
+            return $this->error('Impossible de supprimer un crédit qui contient des entrées.', 409);
+        }
+
         $credit->delete();
 
         return $this->success(null, 'Crédit supprimé avec succès.');
@@ -122,12 +144,12 @@ class CreditController extends Controller
 
     private function applyFilters(Builder $query, Request $request): Builder
     {
-        $filters = ['id', 'organization', 'montant', 'montant_net', 'monthly_payment'];
+        $filters = ['id', 'to', 'montant'];
 
         foreach ($filters as $filter) {
             $value = $request->input($filter);
             if ($request->filled($filter)) {
-                if ($filter === 'id' || $filter === 'montant' || $filter === 'montant_net' || $filter === 'monthly_payment') {
+                if ($filter === 'id' || $filter === 'montant') {
                     $query->where($filter, $value);
                 } else {
                     $query->where($filter, 'like', "%{$value}%");

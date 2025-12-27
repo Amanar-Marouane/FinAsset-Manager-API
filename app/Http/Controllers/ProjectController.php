@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Normalizer;
 use App\Helpers\PaginatorParam;
 use App\Http\Resources\ProjectResource;
 use App\Models\Project;
@@ -57,9 +58,7 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'capital' => 'required|numeric|min:0',
-            'net' => 'required|numeric|min:0',
         ]);
-
         $project = Project::create($validated);
 
         return $this->success(
@@ -94,7 +93,6 @@ class ProjectController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'capital' => 'sometimes|required|numeric|min:0',
-            'net' => 'sometimes|required|numeric|min:0',
         ]);
 
         $project->update($validated);
@@ -113,9 +111,41 @@ class ProjectController extends Controller
             return $this->notFound('Projet introuvable.');
         }
 
+        if ($project->entries()->exists()) {
+            return $this->error('Impossible de supprimer un projet qui contient des entrées.', 409);
+        }
+
         $project->delete();
 
         return $this->success(null, 'Projet supprimé avec succès.');
+    }
+
+    public function byYear(Request $request): JsonResponse
+    {
+        $year = (int) Normalizer::normalizeRequestPayload($request, 'year', date('Y'));
+
+        $query = Project::with(['entries' => function ($q) use ($year) {
+            $q->where('year', $year);
+        }]);
+
+        $projects = $query->get();
+
+        // explicitly fetch last entry per project for the year
+        $projects->each(function ($project) use ($year) {
+            $project->entries->each(function ($entry) use ($year) {
+                $entry->previous_year_last_entry = $entry
+                    ->project
+                    ->entries()
+                    ->where('year', $year - 1)
+                    ->orderBy('month', 'desc')
+                    ->first();
+            });
+        });
+
+        return $this->success(
+            ProjectResource::collection($projects),
+            "Projets avec entrées pour l'année {$year} récupérés avec succès."
+        );
     }
 
     private function applyFilters(Builder $query, Request $request): Builder

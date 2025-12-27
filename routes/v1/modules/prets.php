@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('prets')->group(function () {
     Route::get('/', [PretController::class, 'index']);
+    Route::get('/all', [PretController::class, 'all']);
     Route::get('/create', [PretController::class, 'create']);
     Route::post('/store', [PretController::class, 'store']);
     Route::get('/edit/{id}', [PretController::class, 'edit']);

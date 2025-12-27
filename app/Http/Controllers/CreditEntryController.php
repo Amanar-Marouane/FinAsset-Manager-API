@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\PaginatorParam;
-use App\Http\Resources\CarResource;
-use App\Models\Car;
+use App\Http\Resources\CreditEntryResource;
+use App\Models\CreditEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
 use Unk\LaravelApiResponse\Traits\{HttpResponse, HttpResponseWithDataTables};
 
-class CarController extends Controller
+class CreditEntryController extends Controller
 {
     use HttpResponse, HttpResponseWithDataTables;
 
@@ -24,7 +24,7 @@ class CarController extends Controller
             'draw' => $draw
         ] = PaginatorParam::getNormalizedParams($request);
 
-        $baseQuery = Car::query();
+        $baseQuery = CreditEntry::query();
         $recordsTotal = $baseQuery->count();
         $filteredQuery = $this->applyFilters(clone $baseQuery, $request);
         $recordsFiltered = (clone $filteredQuery)->count();
@@ -36,11 +36,11 @@ class CarController extends Controller
             ->get();
 
         return $this->successDataTable(
-            CarResource::collection($data),
+            CreditEntryResource::collection($data),
             draw: $draw,
             start: $start,
             length: $length,
-            message: 'Voitures chargées avec succès.',
+            message: 'Entrées de crédit chargées avec succès.',
             code: 200,
             recordsTotal: $recordsTotal,
             recordsFiltered: $recordsFiltered
@@ -49,89 +49,94 @@ class CarController extends Controller
 
     public function create(): JsonResponse
     {
-        return $this->success(null, 'Prêt à créer une voiture.');
+        return $this->success(null, 'Prêt à créer une entrée de crédit.');
+    }
+
+    public function all(): JsonResponse
+    {
+        $entries = CreditEntry::all();
+
+        return $this->success(
+            CreditEntryResource::collection($entries),
+            'Toutes les entrées de crédit chargées avec succès.'
+        );
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'model' => 'nullable|string|max:255',
-            'bought_at' => 'nullable|date',
-            'price' => 'nullable|numeric|min:0',
+            'credit_id' => 'required|exists:credits,id',
+            'amount' => 'required|numeric|min:0',
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2000',
         ]);
 
-        $car = Car::create($validated);
+        $entry = CreditEntry::create($validated);
 
         return $this->success(
-            new CarResource($car),
-            'Voiture créée avec succès.',
+            new CreditEntryResource($entry),
+            'Entrée de crédit créée avec succès.',
             201
         );
     }
 
     public function edit(int $id): JsonResponse
     {
-        $car = Car::find($id);
+        $entry = CreditEntry::find($id);
 
-        if (!$car) {
-            return $this->notFound('Voiture introuvable.');
+        if (!$entry) {
+            return $this->notFound('Entrée de crédit introuvable.');
         }
 
         return $this->success(
-            new CarResource($car),
-            'Voiture récupérée avec succès.'
+            new CreditEntryResource($entry),
+            'Entrée de crédit récupérée avec succès.'
         );
     }
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $car = Car::find($id);
+        $entry = CreditEntry::find($id);
 
-        if (!$car) {
-            return $this->notFound('Voiture introuvable.');
+        if (!$entry) {
+            return $this->notFound('Entrée de crédit introuvable.');
         }
 
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'model' => 'nullable|string|max:255',
-            'bought_at' => 'nullable|date',
-            'price' => 'nullable|numeric|min:0',
+            'amount' => 'sometimes|required|numeric|min:0',
+            'month' => 'sometimes|required|integer|min:1|max:12',
+            'year' => 'sometimes|required|integer|min:2000',
         ]);
 
-        $car->update($validated);
+        $entry->update($validated);
 
         return $this->success(
-            new CarResource($car),
-            'Voiture mise à jour avec succès.'
+            new CreditEntryResource($entry),
+            'Entrée de crédit mise à jour avec succès.'
         );
     }
 
     public function destroy(int $id): JsonResponse
     {
-        $car = Car::find($id);
+        $entry = CreditEntry::find($id);
 
-        if (!$car) {
-            return $this->notFound('Voiture introuvable.');
+        if (!$entry) {
+            return $this->notFound('Entrée de crédit introuvable.');
         }
 
-        $car->delete();
+        $entry->delete();
 
-        return $this->success(null, 'Voiture supprimée avec succès.');
+        return $this->success(null, 'Entrée de crédit supprimée avec succès.');
     }
 
     private function applyFilters(Builder $query, Request $request): Builder
     {
-        $filters = ['id', 'name', 'model'];
+        $filters = ['id', 'credit_id', 'amount', 'month', 'year'];
 
         foreach ($filters as $filter) {
             $value = $request->input($filter);
             if ($request->filled($filter)) {
-                if (in_array($filter, ['id'])) {
-                    $query->where($filter, $value);
-                } else {
-                    $query->where($filter, 'like', "%{$value}%");
-                }
+                $query->where($filter, $value);
             }
         }
 

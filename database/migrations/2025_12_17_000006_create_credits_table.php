@@ -9,10 +9,8 @@ return new class extends Migration {
     {
         Schema::create('credits', function (Blueprint $table) {
             $table->id();
+            $table->string('to');
             $table->decimal('montant', 15, 2);
-            $table->decimal('montant_net', 15, 2)->nullable(); // New column for principal amount
-            $table->decimal('monthly_payment', 15, 2)->nullable();
-            $table->string('organization')->nullable();
             $table->timestamps();
         });
     }

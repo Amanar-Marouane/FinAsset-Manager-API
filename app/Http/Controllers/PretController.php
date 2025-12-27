@@ -52,10 +52,33 @@ class PretController extends Controller
         return $this->success(null, 'Prêt à créer un prêt.');
     }
 
+    public function all(Request $request): JsonResponse
+    {
+        $year = $request->input('year', now()->year);
+
+        $prets = Pret::with(['entries' => function ($query) use ($year) {
+            $query->where('year', $year);
+        }])->get();
+
+        // fetch total amount of the entries without that year
+        $prets->each(function ($pret) use ($year) {
+            $pret->entries_total_before_current_year = $pret->entries()
+                ->where('year', '!=', $year)
+                ->sum('amount');
+        });
+
+        return $this->success(
+            PretResource::collection($prets),
+            'Tous les prêts chargés avec succès.'
+        );
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'organization' => 'required|string|max:255',
             'montant' => 'required|numeric|min:0',
+            'montant_net' => 'required|numeric|min:0',
             'monthly_payment' => 'nullable|numeric|min:0',
         ]);
 
@@ -91,7 +114,9 @@ class PretController extends Controller
         }
 
         $validated = $request->validate([
+            'organization' => 'sometimes|required|string|max:255',
             'montant' => 'sometimes|required|numeric|min:0',
+            'montant_net' => 'sometimes|required|numeric|min:0',
             'monthly_payment' => 'nullable|numeric|min:0',
         ]);
 
@@ -111,6 +136,10 @@ class PretController extends Controller
             return $this->notFound('Prêt introuvable.');
         }
 
+        if ($pret->entries()->exists()) {
+            return $this->error('Impossible de supprimer un prêt qui contient des entrées.', 409);
+        }
+
         $pret->delete();
 
         return $this->success(null, 'Prêt supprimé avec succès.');
@@ -118,8 +147,17 @@ class PretController extends Controller
 
     private function applyFilters(Builder $query, Request $request): Builder
     {
-        if ($request->filled('id')) {
-            $query->where('id', $request->input('id'));
+        $filters = ['id', 'organization', 'montant', 'montant_net', 'monthly_payment'];
+
+        foreach ($filters as $filter) {
+            $value = $request->input($filter);
+            if ($request->filled($filter)) {
+                if ($filter === 'id' || $filter === 'montant' || $filter === 'montant_net' || $filter === 'monthly_payment') {
+                    $query->where($filter, $value);
+                } else {
+                    $query->where($filter, 'like', "%{$value}%");
+                }
+            }
         }
 
         return $query;

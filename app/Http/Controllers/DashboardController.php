@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\AccountBalance;
 use App\Models\Bank;
 use App\Models\BankAccount;
-use App\Models\Building;
-use App\Models\BuildingType;
-use App\Models\Car;
 use App\Models\Credit;
+use App\Models\CreditEntry;
 use App\Models\Pret;
+use App\Models\PretEntry;
 use App\Models\Project;
-use App\Models\Terrain;
+use App\Models\ProjectEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Unk\LaravelApiResponse\Traits\HttpResponse;
@@ -23,43 +22,69 @@ class DashboardController extends Controller
     public function metrics(Request $request): JsonResponse
     {
         $now = now();
+        $currentYear = $now->year;
+        $currentMonth = $now->month;
 
         $counts = [
-            'buildings' => Building::count(),
-            'building_types' => BuildingType::count(),
             'banks' => Bank::count(),
             'bank_accounts' => BankAccount::count(),
             'account_balances' => AccountBalance::count(),
-            'cars' => Car::count(),
-            'terrains' => Terrain::count(),
             'projects' => Project::count(),
+            'project_entries' => ProjectEntry::count(),
             'credits' => Credit::count(),
+            'credit_entries' => CreditEntry::count(),
             'prets' => Pret::count(),
+            'pret_entries' => PretEntry::count(),
         ];
 
         $totals = [
-            'projects_total_net' => (string) Project::sum('net'),
+            // Projects
             'projects_total_capital' => (string) Project::sum('capital'),
+            'projects_entries_total' => (string) ProjectEntry::sum('amount'),
+            'projects_entries_current_year' => (string) ProjectEntry::where('year', $currentYear)->sum('amount'),
 
+            // Credits (incoming loans)
             'credits_total_montant' => (string) Credit::sum('montant'),
-            'credits_total_monthly_payment' => (string) Credit::sum('monthly_payment'),
-            'credits_total_montant_net' => (string) Credit::sum('montant_net'),
+            'credits_entries_total' => (string) CreditEntry::sum('amount'),
+            'credits_entries_current_year' => (string) CreditEntry::where('year', $currentYear)->sum('amount'),
+            'credits_entries_current_month' => (string) CreditEntry::where('year', $currentYear)
+                ->where('month', $currentMonth)
+                ->sum('amount'),
 
+            // Prets (outgoing loans)
             'prets_total_montant' => (string) Pret::sum('montant'),
+            'prets_total_montant_net' => (string) Pret::sum('montant_net'),
+            'prets_total_monthly_payment' => (string) Pret::sum('monthly_payment'),
+            'prets_entries_total' => (string) PretEntry::sum('amount'),
+            'prets_entries_current_year' => (string) PretEntry::where('year', $currentYear)->sum('amount'),
+            'prets_entries_current_month' => (string) PretEntry::where('year', $currentYear)
+                ->where('month', $currentMonth)
+                ->sum('amount'),
 
-            'cars_total_value' => (string) Car::sum('price'),
+            // Bank Accounts
+            'current_month_balances_total' => (string) AccountBalance::where('year', $currentYear)
+                ->where('month', $currentMonth)
+                ->sum('amount'),
+            'current_month_balances_count' => AccountBalance::where('year', $currentYear)
+                ->where('month', $currentMonth)
+                ->count(),
+            'all_balances_total' => (string) AccountBalance::sum('amount'),
 
-            // Current month balances (only one per month per account enforced)
-            'current_month_balances_total' => (string) AccountBalance::where('year', $now->year)->where('month', $now->month)->sum('amount'),
-            'current_month_balances_count' => AccountBalance::where('year', $now->year)->where('month', $now->month)->count(),
-
-            // Loan net position (incoming - outgoing)
-            'net_loans_position' => (string) (Pret::sum('montant') - Credit::sum('montant_net')),
+            // Net positions
+            'net_loans_position' => (string) (
+                Pret::sum('montant') - Credit::sum('montant')
+            ),
+            'net_loans_entries_current_year' => (string) (
+                PretEntry::where('year', $currentYear)->sum('amount') -
+                CreditEntry::where('year', $currentYear)->sum('amount')
+            ),
         ];
 
         return $this->success([
             'counts' => $counts,
             'totals' => $totals,
+            'current_year' => $currentYear,
+            'current_month' => $currentMonth,
         ], 'Statistiques du tableau de bord chargées avec succès.');
     }
 }

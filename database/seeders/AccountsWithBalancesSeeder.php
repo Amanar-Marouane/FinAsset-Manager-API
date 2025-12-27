@@ -53,29 +53,48 @@ class AccountsWithBalancesSeeder extends Seeder
                 ['date' => $dateJunPrev, 'amount' => $base + 250]
             );
 
-            $dateDecPrev = Carbon::create($prevYear, 12, 31);
+            $dateJulPrev = Carbon::create($prevYear, 7, 31);
             $account->balances()->updateOrCreate(
-                ['year' => $prevYear, 'month' => $dateDecPrev->month],
-                ['date' => $dateDecPrev, 'amount' => $base + 500]
+                ['year' => $prevYear, 'month' => $dateJulPrev->month],
+                ['date' => $dateJulPrev, 'amount' => $base + 500]
             );
 
             // Current year balances
-            $dateMar = Carbon::create($year, 3, 31);
+
+            $dateJul = Carbon::create($year, 7, 30);
             $account->balances()->updateOrCreate(
-                ['year' => $year, 'month' => $dateMar->month],
-                ['date' => $dateMar, 'amount' => $base + 700]
+                ['year' => $year, 'month' => $dateJul->month],
+                ['date' => $dateJul, 'amount' => $base + 600]
             );
 
-            $dateJun = Carbon::create($year, 6, 30);
+            $dateAug = Carbon::create($year, 8, 31);
+            $account->balances()->updateOrCreate(
+                ['year' => $year, 'month' => $dateAug->month],
+                ['date' => $dateAug, 'amount' => $base + 700]
+            );
+
+            $dateJun = Carbon::create($year, 9, 30);
             $account->balances()->updateOrCreate(
                 ['year' => $year, 'month' => $dateJun->month],
                 ['date' => $dateJun, 'amount' => $base + 950]
             );
 
-            $dateSep = Carbon::create($year, 9, 30);
+            $dateSep = Carbon::create($year, 10, 30);
             $account->balances()->updateOrCreate(
                 ['year' => $year, 'month' => $dateSep->month],
                 ['date' => $dateSep, 'amount' => $base + 1200]
+            );
+
+            $dateOct = Carbon::create($year, 11, 30);
+            $account->balances()->updateOrCreate(
+                ['year' => $year, 'month' => $dateOct->month],
+                ['date' => $dateOct, 'amount' => $base + 1500]
+            );
+
+            $dateNov = Carbon::create($year, 12, 31);
+            $account->balances()->updateOrCreate(
+                ['year' => $year, 'month' => $dateNov->month],
+                ['date' => $dateNov, 'amount' => $base + 1800]
             );
         }
     }

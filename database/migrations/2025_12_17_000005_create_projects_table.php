@@ -10,7 +10,6 @@ return new class extends Migration {
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
             $table->decimal('capital', 15, 2)->default(0);
-            $table->decimal('net', 15, 2)->default(0);
             $table->timestamps();
         });
     }

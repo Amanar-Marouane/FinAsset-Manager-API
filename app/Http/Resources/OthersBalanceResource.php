@@ -5,7 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BuildingResource extends JsonResource
+class OthersBalanceResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,12 +16,11 @@ class BuildingResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'address' => $this->address,
-            'building_type' => $this->type ? [
-                'id' => $this->type->id,
-                'name' => $this->type->name,
-            ] : null,
+            'year' => $this->year,
+            'month' => $this->month,
+            'date' => $this->date->format('Y-m'),
+            'previous_year_last_balance' => $this->previous_year_last_balance ? $this->previous_year_last_balance->amount : null,
+            'amount' => $this->amount,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

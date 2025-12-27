@@ -9,8 +9,9 @@ return new class extends Migration {
     {
         Schema::create('prets', function (Blueprint $table) {
             $table->id();
-            // same as credit but without organization
+            $table->string('organization');
             $table->decimal('montant', 15, 2);
+            $table->decimal('montant_net', 15, 2);
             $table->decimal('monthly_payment', 15, 2)->nullable();
             $table->timestamps();
         });

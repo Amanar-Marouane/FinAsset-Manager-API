@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\PaginatorParam;
-use App\Http\Resources\TerrainResource;
-use App\Models\Terrain;
+use App\Http\Resources\PretEntryResource;
+use App\Models\PretEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
 use Unk\LaravelApiResponse\Traits\{HttpResponse, HttpResponseWithDataTables};
 
-class TerrainController extends Controller
+class PretEntryController extends Controller
 {
     use HttpResponse, HttpResponseWithDataTables;
 
@@ -24,7 +24,7 @@ class TerrainController extends Controller
             'draw' => $draw
         ] = PaginatorParam::getNormalizedParams($request);
 
-        $baseQuery = Terrain::query();
+        $baseQuery = PretEntry::query();
         $recordsTotal = $baseQuery->count();
         $filteredQuery = $this->applyFilters(clone $baseQuery, $request);
         $recordsFiltered = (clone $filteredQuery)->count();
@@ -36,11 +36,11 @@ class TerrainController extends Controller
             ->get();
 
         return $this->successDataTable(
-            TerrainResource::collection($data),
+            PretEntryResource::collection($data),
             draw: $draw,
             start: $start,
             length: $length,
-            message: 'Terrains chargés avec succès.',
+            message: 'Entrées de prêt chargées avec succès.',
             code: 200,
             recordsTotal: $recordsTotal,
             recordsFiltered: $recordsFiltered
@@ -49,85 +49,94 @@ class TerrainController extends Controller
 
     public function create(): JsonResponse
     {
-        return $this->success(null, 'Prêt à créer un terrain.');
+        return $this->success(null, 'Prêt à créer une entrée de prêt.');
+    }
+
+    public function all(): JsonResponse
+    {
+        $entries = PretEntry::all();
+
+        return $this->success(
+            PretEntryResource::collection($entries),
+            'Toutes les entrées de prêt chargées avec succès.'
+        );
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'nullable|string|max:255',
+            'pret_id' => 'required|exists:prets,id',
+            'amount' => 'required|numeric|min:0',
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2000',
         ]);
 
-        $terrain = Terrain::create($validated);
+        $entry = PretEntry::create($validated);
 
         return $this->success(
-            new TerrainResource($terrain),
-            'Terrain créé avec succès.',
+            new PretEntryResource($entry),
+            'Entrée de prêt créée avec succès.',
             201
         );
     }
 
     public function edit(int $id): JsonResponse
     {
-        $terrain = Terrain::find($id);
+        $entry = PretEntry::find($id);
 
-        if (!$terrain) {
-            return $this->notFound('Terrain introuvable.');
+        if (!$entry) {
+            return $this->notFound('Entrée de prêt introuvable.');
         }
 
         return $this->success(
-            new TerrainResource($terrain),
-            'Terrain récupéré avec succès.'
+            new PretEntryResource($entry),
+            'Entrée de prêt récupérée avec succès.'
         );
     }
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $terrain = Terrain::find($id);
+        $entry = PretEntry::find($id);
 
-        if (!$terrain) {
-            return $this->notFound('Terrain introuvable.');
+        if (!$entry) {
+            return $this->notFound('Entrée de prêt introuvable.');
         }
 
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'address' => 'nullable|string|max:255',
+            'amount' => 'sometimes|required|numeric|min:0',
+            'month' => 'sometimes|required|integer|min:1|max:12',
+            'year' => 'sometimes|required|integer|min:2000',
         ]);
 
-        $terrain->update($validated);
+        $entry->update($validated);
 
         return $this->success(
-            new TerrainResource($terrain),
-            'Terrain mis à jour avec succès.'
+            new PretEntryResource($entry),
+            'Entrée de prêt mise à jour avec succès.'
         );
     }
 
     public function destroy(int $id): JsonResponse
     {
-        $terrain = Terrain::find($id);
+        $entry = PretEntry::find($id);
 
-        if (!$terrain) {
-            return $this->notFound('Terrain introuvable.');
+        if (!$entry) {
+            return $this->notFound('Entrée de prêt introuvable.');
         }
 
-        $terrain->delete();
+        $entry->delete();
 
-        return $this->success(null, 'Terrain supprimé avec succès.');
+        return $this->success(null, 'Entrée de prêt supprimée avec succès.');
     }
 
     private function applyFilters(Builder $query, Request $request): Builder
     {
-        $filters = ['id', 'name', 'address'];
+        $filters = ['id', 'pret_id', 'amount', 'month', 'year'];
 
         foreach ($filters as $filter) {
             $value = $request->input($filter);
             if ($request->filled($filter)) {
-                if ($filter === 'id') {
-                    $query->where($filter, $value);
-                } else {
-                    $query->where($filter, 'like', "%{$value}%");
-                }
+                $query->where($filter, $value);
             }
         }
 

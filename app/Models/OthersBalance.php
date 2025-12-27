@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Class AccountBalance
+ * Class OthersBalance
  *
  * @property int $id
  * @property int $bank_account_id
@@ -19,10 +19,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property-read \App\Models\BankAccount $account
  */
-class AccountBalance extends Model
+class OthersBalance extends Model
 {
     protected $fillable = [
-        'bank_account_id',
         'year',
         'month',
         'date',
@@ -58,13 +57,5 @@ class AccountBalance extends Model
                 $model->month = $model->date->month;
             }
         });
-    }
-
-    /**
-     * Account this balance belongs to.
-     */
-    public function account(): BelongsTo
-    {
-        return $this->belongsTo(BankAccount::class);
     }
 }
